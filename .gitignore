@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.spec
+
+# Virtual env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project data
+*.db
+*.ini
+settings.ini
+tinypng_data.db
+
+# Build outputs
+installer/
+*.exe
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Test artifacts
+test_images/
+test_output/
+test_*.png

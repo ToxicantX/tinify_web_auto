@@ -1,0 +1,84 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build portable EXE
+        run: |
+          python -m PyInstaller `
+            --onefile `
+            --windowed `
+            --name TinyPNGCompressor `
+            --hidden-import tinify `
+            --hidden-import DrissionPage `
+            --hidden-import PIL.PngImagePlugin `
+            --hidden-import PIL.JpegImagePlugin `
+            --clean `
+            main.py
+
+      - name: Upload portable EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinyPNGCompressor-portable
+          path: dist/TinyPNGCompressor.exe
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --version=6.7.1 --limit-output
+
+      - name: Build installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinyPNGCompressor-setup
+          path: installer/TinyPNGCompressor_Setup_v*.exe
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download portable EXE
+        uses: actions/download-artifact@v4
+        with:
+          name: TinyPNGCompressor-portable
+
+      - name: Download installer
+        uses: actions/download-artifact@v4
+        with:
+          name: TinyPNGCompressor-setup
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: |
+            TinyPNGCompressor.exe
+            TinyPNGCompressor_Setup_v*.exe
+          generate_release_notes: true
