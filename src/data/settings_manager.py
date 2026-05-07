@@ -56,3 +56,12 @@ class SettingsManager:
     @web_browser_path.setter
     def web_browser_path(self, value: str):
         self._settings.setValue("web/browser_path", value)
+
+    @property
+    def min_size_kb(self) -> int:
+        val = self._settings.value("compress/min_size_kb", 0)
+        return int(val) if val else 0
+
+    @min_size_kb.setter
+    def min_size_kb(self, value: int):
+        self._settings.setValue("compress/min_size_kb", value)

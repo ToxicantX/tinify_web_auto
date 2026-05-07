@@ -231,17 +231,32 @@ class CompressTab(QWidget):
                 QMessageBox.warning(self, "网页模式错误", msg)
                 return
 
+        # Filter by minimum size threshold
+        min_bytes = self._settings.min_size_kb * 1024
+        files_to_compress = self._files
+        if min_bytes > 0:
+            skipped = [f for f in self._files if os.path.getsize(f) < min_bytes]
+            files_to_compress = [f for f in self._files if os.path.getsize(f) >= min_bytes]
+            if skipped:
+                for f in skipped:
+                    row = self._files.index(f)
+                    self._table.setItem(row, 2, QTableWidgetItem("已跳过（文件过小）"))
+                    self._table.item(row, 2).setForeground(Qt.GlobalColor.gray)
+            if not files_to_compress:
+                self.status_message.emit(f"所有文件均小于 {self._settings.min_size_kb} KB，已跳过", 4000)
+                return
+
         # Determine output directory
         output_dir = self._settings.output_dir
         if not output_dir:
-            output_dir = os.path.dirname(self._files[0])
+            output_dir = os.path.dirname(files_to_compress[0])
 
         self._compressing = True
         self._compress_btn.setEnabled(False)
         self._clear_btn.setEnabled(False)
 
         self._thread = QThread()
-        self._worker = CompressWorker(engine, list(self._files), output_dir)
+        self._worker = CompressWorker(engine, list(files_to_compress), output_dir)
         self._worker.moveToThread(self._thread)
         self._worker.progress.connect(self._on_progress)
         self._worker.finished.connect(self._on_finished)
@@ -257,8 +272,12 @@ class CompressTab(QWidget):
         self._clear_btn.setEnabled(True)
         self._results = results
 
-        # Update table
-        for i, r in enumerate(results):
+        # Update table (use original_path to find row, so skipped files stay intact)
+        for r in results:
+            try:
+                i = self._files.index(r.original_path)
+            except ValueError:
+                continue
             if r.success:
                 self._table.setItem(i, 2, QTableWidgetItem("完成"))
                 self._table.item(i, 2).setForeground(Qt.GlobalColor.green)

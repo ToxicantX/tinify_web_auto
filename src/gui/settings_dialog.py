@@ -72,6 +72,14 @@ class SettingsDialog(QDialog):
         self._concurrency_spin.setSuffix(" 个并发")
         form.addRow("API 并发数:", self._concurrency_spin)
 
+        # Min size threshold
+        self._min_size_spin = QSpinBox()
+        self._min_size_spin.setRange(0, 102400)
+        self._min_size_spin.setValue(self._settings.min_size_kb)
+        self._min_size_spin.setSuffix(" KB")
+        self._min_size_spin.setSpecialValueText("不限制")
+        form.addRow("最小压缩大小:", self._min_size_spin)
+
         # Browser path
         browser_layout = QHBoxLayout()
         self._browser_input = QLineEdit(self._settings.web_browser_path)
@@ -135,4 +143,5 @@ class SettingsDialog(QDialog):
         self._settings.default_mode = self._mode_combo.currentData()
         self._settings.concurrency = self._concurrency_spin.value()
         self._settings.web_browser_path = self._browser_input.text().strip()
+        self._settings.min_size_kb = self._min_size_spin.value()
         self.accept()
